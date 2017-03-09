@@ -1,8 +1,5 @@
 """
-Generic Kinesis consumer class
-
-
-
+Abstract classes for Kinesis consumers and producers.
 """
 
 import time
