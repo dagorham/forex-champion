@@ -48,6 +48,13 @@ class KinesisConsumer:
         self.shard_iterator = self.client.get_shard_iterator(self.stream_name, self.shard_id, "LATEST")["ShardIterator"]
 
     def pull(self):
+        """
+        Pulls from the defined Kinesis stream. Checks the validity of the record, processes it,
+        and then yields control to the run() method.
+
+        :return: yields processed record
+        """
+
         try:
             # get output from stream
             output = self.client.get_records(self.shard_iterator, self.record_limit)
@@ -75,7 +82,7 @@ class KinesisConsumer:
         if not overridden.
 
         :param record:
-        :return:
+        :return: True if false, False if not, True by default if not overridden by subclass.
         """
 
         return True
@@ -108,7 +115,7 @@ class KinesisConsumer:
         Runs the Kinesis consumer.
 
         Continuously loops on the pull() generator which returns records
-        from the Kinesis stream, processed them, and sends them on their way
+        from the Kinesis stream, processes them, and sends them on their way
         as defined.
 
         :return: void
