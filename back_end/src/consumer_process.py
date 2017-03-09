@@ -28,7 +28,15 @@ class ForexConsumerProcessed(KinesisConsumer):
         self.bucket = bucket
 
     def check_record_validity(self, record):
+        """
+        Checks a record's validity.
+
+        :param record: Kinesis record to check
+        :return: True if it's valid, False if it's not
+        """
+
         try:
+            # the prices key won't exist if the record is bad
             json.loads(record['Data'])['prices'][0]
             return True
 
@@ -39,9 +47,8 @@ class ForexConsumerProcessed(KinesisConsumer):
         """
         Takes the json object returned by the API endpoint and returns it in the format we want in our database.
 
-        param: currency_pair - pair in format XXX_XXX is the three letter code for some currency
-        param: request_header - header with the api_key
-        return: json object with time and bid/ask
+        :param record: kinesis record
+        :return list with format [ticker_name, rate_time, bid, ask]
         """
 
         exchange_data_json = json.loads(record['Data'])
@@ -67,9 +74,10 @@ class ForexConsumerProcessed(KinesisConsumer):
 
     def send_record(self, processed_record):
         """
-        param instrument_data_list: instrument data in format [instrument_name, unix_time, bid_price, ask_price]
-        param bucket: bucket to write to
-        return: void
+        Appends processed record to the CSV on S3.
+
+        :param processed_record: instrument data in format [instrument_name, unix_time, bid_price, ask_price]
+        :return: void
         """
 
         # pull out the name of the instrument
