@@ -1,11 +1,11 @@
 """
 Kinesis streams consumer for data lake.
 
-This will dump the exchange rate JSON object into S3 with no pre processing.
+This will dump the exchange rate data into S3 with no pre processing.
 
 The data will be written to a file on S3 with the format:
 
-s3://forex-data-raw/
+s3://forex-data-raw/INSTRUMENT_NAME/YEAR/MONTH/DAY/UNIX_TIME.txt
 """
 
 
@@ -27,9 +27,15 @@ class ForexConsumerRaw(KinesisConsumer):
         self.bucket = bucket
 
     def check_record_validity(self, record):
-        # don't dump it to S3 if it's an API errors
+        """
+        Checks a record's validity.
+
+        :param record: Kinesis record to check
+        :return: True if it's valid, False if it's not
+        """
 
         try:
+            # the prices key won't exist if the record is bad
             json.loads(record['Data'])['prices'][0]
             return True
 
@@ -37,12 +43,24 @@ class ForexConsumerRaw(KinesisConsumer):
             return False
 
     def process_record(self, record):
-        # no preprocessing here
+        """
+        Minimal preprocessing. Just convert from JSON to string so it can be written to S3.
+
+        :param record: JSON object for record
+        :return: record converted to string
+        """
 
         return json.dumps(record)
 
     def send_records(self, processed_records):
-        # get time for folder names
+        """
+        Writes a group of records to S3 as one large JSON file.
+
+        :param processed_records: list of processed records
+        :return: void
+        """
+
+        # get date for folder names
         record_time = datetime.fromtimestamp(time.time()).strftime("%Y %m %d").split()
 
         all_records_together = "\n".join(processed_records)
