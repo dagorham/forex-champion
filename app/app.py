@@ -1,3 +1,17 @@
+"""
+Spyre app that allows for visualization of various currency exchange rates over time.
+The app allows for plotting of up to two currencies at the same time. The two general options are for
+historical data, which shows daily metrics over a long period of time, or the past 24 hours, which shows
+minute by minute prices over the past 24 hour period ending at the current time.
+
+For historical data, the following options are provided.:
+
+- start date: where to start the plot (earliest 2007/10/05)
+- end date: where to end the date (latest yesterday)
+- values to show: open bid, open ask, max bid, max ask, min bid, min ask, close bid, close ask
+"""
+
+
 import os
 
 import yaml
@@ -116,5 +130,7 @@ class ForexApp(server.App):
 
         return info_page
 
-app = ForexApp()
-app.launch(port=8000)
+
+if __name__ == '__main__':
+    app = ForexApp()
+    app.launch(port=8000)

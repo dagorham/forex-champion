@@ -1,3 +1,8 @@
+"""
+Historical and daily plotting functions for the Spyre app.
+"""
+
+
 import time
 import io
 import pytz
