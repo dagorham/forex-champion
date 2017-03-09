@@ -1,0 +1,76 @@
+"""
+Kinesis streams consumer for data lake.
+
+This will dump the exchange rate JSON object into S3 with no pre processing.
+
+The data will be written to a file on S3 with the format:
+
+s3://forex-data-raw/
+"""
+
+
+import time
+import json
+
+import boto
+
+from datetime import datetime
+
+from boto import kinesis
+
+from kinesis import KinesisConsumer
+
+
+class ForexConsumerRaw(KinesisConsumer):
+    def __init__(self, client, sleep_period, shard_id, stream_name, record_limit, begin_read, bucket):
+        super(ForexConsumerRaw, self).__init__(client, sleep_period, shard_id, stream_name, record_limit, begin_read)
+        self.bucket = bucket
+
+    def check_record_validity(self, record):
+        # don't dump it to S3 if it's an API errors
+
+        try:
+            json.loads(record['Data'])['prices'][0]
+            return True
+
+        except KeyError:
+            return False
+
+    def process_record(self, record):
+        # no preprocessing here
+
+        return json.dumps(record)
+
+    def send_records(self, processed_records):
+        # get time for folder names
+        record_time = datetime.fromtimestamp(time.time()).strftime("%Y %m %d").split()
+
+        all_records_together = "\n".join(processed_records)
+
+        # new key is FOREX-RAW-DATA with the UNIX epoch time appended
+        new_key_name = "{}/{}/{}/FOREX-RAW-DATA-{UNIX_TIME}".format(*record_time, UNIX_TIME=str(int(time.time())))
+
+        # write everything to s3
+        key = self.bucket.new_key(new_key_name)
+        key.set_contents_from_string(all_records_together)
+
+
+def main():
+    # necessary AWS connections
+    s3_client = boto.connect_s3()
+    BUCKET = s3_client.get_bucket("forex-raw-data")
+    CLIENT = kinesis.connect_to_region("us-east-1")
+
+    # define kinesis constants
+    SHARD_ID = "shardId-000000000000"
+    STREAM_NAME = "forex_stream"
+    RECORD_LIMIT = 11
+    BEGIN_READ = "filler"
+    SLEEP_PERIOD = 60
+
+    forex_consumer_raw = ForexConsumerRaw(CLIENT, SLEEP_PERIOD, SHARD_ID, STREAM_NAME, RECORD_LIMIT, BEGIN_READ, BUCKET)
+
+    forex_consumer_raw.run()
+
+if __name__ == '__main__':
+    main()
