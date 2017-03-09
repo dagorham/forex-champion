@@ -105,7 +105,7 @@ class KinesisConsumer:
         writing them to disk, inserting them into a database, or sending them to
         another kinesis_stream
 
-        :param processed_records: record processed by the record_processor method
+        :param processed_records: list of records processed by the record_processor method
         """
 
         pass
